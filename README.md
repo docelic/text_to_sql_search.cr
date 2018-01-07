@@ -8,7 +8,7 @@ This shard is for you when you use an SQL data store and want to generate WHERE 
 
 The shard works with any database for which the generated SQL WHERE clause is valid. The resulting SQL is usable in Model.all("WHERE ...") invocations in ORM models such as [Granite ORM](https://github.com/docelic/granite-orm/), in any other ORMs that support direct SQL input, and even in manual SQL search invocations.
 
-When search identifiers are recognized to be column names, generated SQL WHEREs default to searching in those columns. When search terms are not identifiers, they are searched in a custom-definable set of fields with definable operators.
+When search identifiers are recognized to be column names, generated SQL WHEREs default to searching in those columns. When search terms are not identifiers, they are searched in custom-definable sets of fields with custom-definable operators.
 
 ## Supported Search Types
 
