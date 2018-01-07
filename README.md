@@ -12,17 +12,19 @@ When search identifiers are recognized to be column names, generated SQL WHEREs 
 
 ## Supported Search Types
 
-A couple examples to get you going, for example in car sale searches. All forms of spacing are tolerated - the spacing shown is chosen just for clarity how the parser will interpret the text:
+Let's start with a couple examples to get you going. The examples do not show specific configuration settings or char-by-char accurate SQL that is generated; they give you a general idea of what's possible and what you get out of the box.
+
+Say that we want to provide a text search for use in automobile sales:
 
 ```text_to_sql_search
-INPUT: sedan    4 doors    > 2000 ccm    price < 20k    with    no    scratches
-WHERE: "type"='sedan' AND "doors"='4' AND "ccm">'2000' AND "price"<'20000' AND not("scratches">'0')
+INPUT: sedan    4 doors    > 2000 ccm    price < 20k    with    no    downpayment
+WHERE: "type"='sedan' AND "doors"='4' AND "ccm">'2000' AND "price"<'20000' AND not("downpayment">'0')
 
 INPUT: > 3000 ccm or with    stereo
 WHERE: ccm>3000 or stereo>0
 
-INPUT: ((4 door and color is blue) or !scratches) and price less than 5000
-WHERE: ((doors=4 AND color=blue) OR not(scratches>0)) AND price<5000
+INPUT: ((4 door and color is blue) or !downpayment) and price less than 5000
+WHERE: ((doors=4 AND color=blue) OR not(downpayment>0)) AND price<5000
 
 INPUT: color is "metallic red" or year: 2015
 WHERE: color='metallic red' or year >= 2015
