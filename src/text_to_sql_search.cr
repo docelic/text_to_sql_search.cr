@@ -125,6 +125,16 @@ module TextToSqlSearch
 				else
 				end
 
+				text, vals, negative= qualify field, op, value, negative
+				terms<< %Q{#{joiner}#{pre}#{negative ? "not" : ""}(#{text})\n}
+				values+= vals
+
+				i+= 1
+
+				# XXX These lines should be kept in sync with the same block before 'while i< count'
+				joiner= config.default_joiner      # Default joiner to put in SQL between (key=value) pairs
+				negative= config.default_negative  # Are we in positive match or negative by default?
+				content_before= ""                 # Small accumulator for pass-thru characters like opening parentheses
 			end
 		end
 	end
