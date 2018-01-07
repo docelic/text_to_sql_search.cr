@@ -4,11 +4,11 @@
 
 The search specifications are generally intended to come from three sources: free-form search inputs on websites, submitted form fields, and command lines. However, there is nothing in the code that would prevent any other uses as long as the input is text.
 
-This shard is for you if you use an SQL data store in your application and want to generate WHERE clauses in a simpler and more user friendly way than asking users to write SQL or you manually converting form inputs into SQL or ORM wrappers syntax.
+This shard is for you when you use an SQL data store and want to generate WHERE clauses in a simple and user-intuitive way. It is much better than asking your users to write SQL directly or you manually writing conversions from form inputs into SQL and ORM wrappers' syntax.
 
-The shard works with any database for which the generated SQL WHERE clause is valid. The resulting SQL is then applicable for manual SQL search invocations, Model.all("WHERE ...") invocations in ORM models such as [Granite ORM](https://github.com/docelic/granite-orm/), and any other ORMs that support direct SQL input.
+The shard works with any database for which the generated SQL WHERE clause is valid. The resulting SQL is then applicable for Model.all("WHERE ...") invocations in ORM models such as [Granite ORM](https://github.com/docelic/granite-orm/), any other ORMs that support direct SQL input, or even manual SQL search invocations.
 
-When search identifiers are recognized to be column names, generated SQL WHEREs defaults to those columns. When search terms are not identifiers, they are searched in a custom-definable set of fields with a definable operator.
+When search identifiers are recognized to be column names, generated SQL WHEREs default to searching in those columns. When search terms are not identifiers, they are searched in a custom-definable set of fields with definable operators.
 
 ## Supported Search Types
 
