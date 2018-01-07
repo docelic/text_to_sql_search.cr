@@ -1,4 +1,4 @@
-# Welcome to Text to SQL Search
+# Welcome to Text To SQL Search
 
 **Text to SQL Search** is a shard written in [Crystal](http://www.crystal-lang.org) for translating simple textual search specifications and keywords into SQL WHERE clauses. All the necessary options to configure the specifics of the translation process are provided.
 
