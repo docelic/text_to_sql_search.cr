@@ -65,7 +65,7 @@ module TextToSqlSearch
 			tokens.reject! {|t| t.blank? }
 			
 			# These initialize one-time and accumulate values as parsing advances
-			terms= config.first_element # Accumulated SQL WHERE terms
+			terms= String::Builder.new(config.first_element) # Accumulated SQL WHERE terms
 			values= [] of String        # Their corresponding values (replacements for "?"s)
 			count= tokens.size          # Total number of tokens we have for parsing
 			i= 0                        # Current position in tokens array
@@ -91,7 +91,7 @@ module TextToSqlSearch
 					i+= 1
 					next
 				when config.passthru_closing
-					terms+= token
+					terms<< token
 					i+= 1
 					next
 				when config.and_word
