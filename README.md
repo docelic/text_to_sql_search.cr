@@ -12,7 +12,7 @@ When search identifiers are recognized to be column names, generated SQL WHEREs 
 
 ## Supported Search Types
 
-Let's start with a couple examples to get you going. The examples do not show specific configuration settings or char-by-char accurate SQL that is generated; they provide a general idea of what's supported and what you get out of the box.
+Let's start with a couple examples to get you going. The examples do not show specific configuration settings or char-by-char accurate SQL that is generated; they provide a general intro to what is supported and what you get out of the box.
 
 Say that we want to provide a text search for use in automobile sales:
 
