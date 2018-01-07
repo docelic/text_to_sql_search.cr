@@ -35,6 +35,8 @@ Ensure you have the necessary dependencies:
 - `git`: Use your platform specific package manager to install `git`
 - `crystal`: Follow the instructions to get `crystal` on this page: <https://crystal-lang.org/docs/installation/index.html>
 
+Then:
+
 ```shellsession
 $ git clone https://github.com/docelic/text_to_sql_search.cr.git
 $ cd text_to_sql_search.cr
