@@ -2,13 +2,24 @@ require "yaml"
 require "./text_to_sql_search/**"
 
 module TextToSqlSearch
-	DEBUG= true
+	DEBUG= false
 
 	class Config
 		@infix_operator   = /^[<>=:]$/
 		@prefix_operator  = /^[<>=]$/
-		@inversion_word    = /^(?:\!|not|no)$/
-		@ignored_word     = /^(?:than)/i
+		@inversion_word   = /^(?:\!)$/
+
+		# These are words which are to be treated as inversions when
+		# they come AFTER a yes word or no word. Like, if you say
+		# something like "no rust", it will be parsed as "-rust".
+		# But if you say "with no rust" or "has no rust", it will
+		# be parsed as "! rust". By default, these two actions have
+		# the same effect and will in most applications be the same,
+		# but the difference is important if one is trying to create
+		# a very precise custom configuration.
+		@inversion_word_2 = /^(?:\!|not|no|without)$/
+
+		@ignored_word     = /^(?:than)$/i
 		@split_regex      = /"(.*?)"|\s+|([()><:=+!-])/
 		@strip            = true
 		@default_joiner   = "AND"
@@ -16,8 +27,8 @@ module TextToSqlSearch
 		@first_element    = "(1)"
 		@passthru_opening = /^[\(]$/
 		@passthru_closing = /^[\)]$/
-		@and_word         = /^(?:and)/i
-		@or_word          = /^(?:or)/i
+		@and_word         = /^(?:and)$/i
+		@or_word          = /^(?:or)$/i
 		@yes_word         = /^(?:\+|has|with|includes)$/
 		@no_word          = /^(?:\-|not|no|without)$/
 		@value_regex      = /^\d+$/
@@ -34,6 +45,7 @@ module TextToSqlSearch
 			infix_operator:   {type: Regex},
 			prefix_operator:  {type: Regex},
 			inversion_word:   {type: Regex},
+			inversion_word_2: {type: Regex},
 			ignored_word:     {type: Regex},
 			split_regex:      {type: Regex},
 			strip:            {type: Bool},
@@ -59,10 +71,11 @@ module TextToSqlSearch
 
 		def parse( input)
 			# These happen one time to prepare the input line for parsing
+			debug "-"* 50
 			debug input
 			input= input.strip if config.strip
 			tokens= input.split config.split_regex
-			debug tokens
+			#debug tokens
 			tokens.reject! {|t| t.blank? }
 			debug tokens
 			
@@ -78,15 +91,18 @@ module TextToSqlSearch
 			content_before= ""                 # Small accumulator for pass-thru characters like opening parentheses
 
 			while i< count
-				debug :in_while
+				debug "Remaining text: #{tokens[i..-1]}"
 				token= tokens[i].strip if config.strip
+				debug "Examining token: #{token}"
 
 				case token
 				when config.ignored_word
 					i+= 1
 					next
 				when config.inversion_word
+					negative= !negative
 					_, i, negative= on_to_next tokens, i, negative
+					i+= 1
 					next
 				when config.passthru_opening
 					content_before+= token.not_nil!
@@ -105,17 +121,19 @@ module TextToSqlSearch
 					i+= 1
 					next
 				when config.yes_word
+					_, i, negative= on_to_next tokens, i, negative
 					# Next word is field
 					field= tokens[i+=1]
 					value= "0"
 					op= "+"
 				when config.no_word
+					_, i, negative= on_to_next tokens, i, negative
 					# Next word is field
 					field= tokens[i+=1]
 					value= "0"
 					op= "-"
 				when config.value_regex
-					# Next word is what and we're done
+					# Next word is field and we're done
 					value= token
 					field= tokens[i+=1]
 					op= "="
@@ -163,8 +181,10 @@ module TextToSqlSearch
 					# Make sure we rewind through insignificant elements, while still taking
 					# them into account (like inversion character '!'). This helps us to
 					# simplify 
+					debug "Before next_token: #{i}, #{negative}"
 					next_token, i, negative2= on_to_next( tokens, i, negative)
 					negative= negative2
+					debug "After next_token: #{next_token}, #{i}, #{negative}"
 
 					# Important: do not use 'i' below; use only 'i+1' or more.
 					# ('i' may be positioned at an inversion character rather than the field
@@ -193,6 +213,7 @@ module TextToSqlSearch
 						if next_token== :operator
 							field= token
 							op= tokens[i+=1]
+							_, i, negative= on_to_next tokens, i, negative
 							value= tokens[i+=1]
 						else
 							field= token
@@ -217,7 +238,7 @@ module TextToSqlSearch
 				end
 
 				text, vals, negative= qualify field, op, value, negative
-				terms<< %Q{#{joiner}#{content_before}#{negative ? "not" : ""}(#{text})\n}
+				terms<< %Q{#{joiner}#{content_before}#{negative ? " not" : ""}(#{text})}
 				values+= vals
 
 				i+= 1
@@ -233,18 +254,22 @@ module TextToSqlSearch
 		
 		# Given list and current position, peeks into upcoming elements to determine their type.
 		# All decision-making is done based on current config.
-		def on_to_next( list, i, negation, ignored= nil)
-			while el= list[i+=1]?
-				next if ignored && el=~ ignored
+		def on_to_next( list, i, negation, ignored= config.ignored_word)
+			while el= list[i+1]?
+				if ignored && el=~ ignored
+					i+= 1
+				end
 				return {:operator, i, negation} if el=~ config.infix_operator
 				return {:value, i, negation} if el=~ config.value_regex
-				if el=~ config.inversion_word
+				if el=~ config.inversion_word_2
 					negation= !negation
+					i+= 1
 					next
 				end
 				return {:todo, i, negation}
 			end
-			return {:BUG, 0, true}
+			#raise Exception.new "BUG? list:#{list}, i:#{i}, negation:#{negation}, ignored:#{ignored}"
+			return {:none, i, negation}
 		end
 
 	# Resolves aliases if any, then qualifies input to check that everything valid and allowed,
@@ -252,7 +277,7 @@ module TextToSqlSearch
 	# This method needs work
 	def qualify( field, op, value, negative)
 		default_operator= {
-			"field" => ">"
+			"year" => ">"
 		}
 
 		field=~ /^[\w\s]+$/ || raise Exception.new "Qualification failed on field #{field}"
@@ -269,9 +294,11 @@ module TextToSqlSearch
 
 		op=~ config.infix_operator || raise Exception.new "Qualification failed on op #{op}"
 
-		value=~ /^\w+$/ || raise Exception.new "Qualification failed on value #{value}"
+		value=~ /^[\w ]+$/ || raise Exception.new "Qualification failed on value #{value}"
 
-		{ %{"#{field}"#{op}?}, [value], negative}
+		ret= { %{"#{field}"#{op}?}, [value], negative}
+		debug ret
+		ret
 	end
 
 	end
