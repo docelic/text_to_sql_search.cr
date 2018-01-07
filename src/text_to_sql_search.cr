@@ -49,13 +49,17 @@ module TextToSqlSearch
 		
 		# Given list and current position, peeks into upcoming elements to determine their type.
 		# All decision-making is done based on current config.
-		def peek_next( list, i, ignored= config.ignored_word)
+		def on_to_next( list, i, negation, ignored= nil)
 			while el= list[i+=1]?
-				next if el=~ ignored
-				return :operator if el=~ config.infix_operator
-				return :inversion if el=~ config.inversion_word
-				return :todo
+				next if ignored && el=~ ignored
+				return {:operator, i, negation} if el=~ config.infix_operator
+				if el=~ config.inversion_word
+					negation= !negation
+					next
+				end
+				return {:todo, i, negation}
 			end
+			return {:BUG, 0, true}
 		end
 
 		def parse( input)
@@ -83,8 +87,7 @@ module TextToSqlSearch
 					i+= 1
 					next
 				when config.inversion_word
-					negative= !negative
-					i+= 1
+					_, i, negative= on_to_next tokens, i, negative
 					next
 				when config.passthru_opening
 					content_before+= token
@@ -122,7 +125,96 @@ module TextToSqlSearch
 					value= tokens[i+=1]
 					field= tokens[i+=1]
 					op= token
+
 				else
+					# If here, it means we just got a plain word. Now there a couple
+					# parsing choices.
+
+					# 1. If we are forcing prefix notation (where operator and value are
+					# given before the field), then we treat this field equal to +field.
+					# Mode name: force_prefix_operator
+
+					# 2. If we are forcing infix notation and require operator, then this
+					# must be followed by operator and value.
+					# Mode name: force_infix_operator
+
+					# 3. If we are forcing infix notation with mandatory value (operator
+					# optional), then if no operator is present, next token is considered
+					# to be value and operator is set to default one.
+					# Mode name: force_suffix_value
+
+					# 4. If we prefer infix notation with operator and value, then if
+					# operator is present, next field after it is considered value.
+					# If operator is not present, field is treated as +field.
+					# Mode name: prefer_infix_operator. This is the default.
+
+					# 5. And finally if we prefer value, then if operator is missing and
+					# next field looks like value, then we take it and assume default
+					# operator. Mode name: prefer_suffix_value
+
+					# items without having to put + in front.
+					# So, 'room garage attic' would be same as '+room +garage +attic',
+					# or in SQL, room>0 AND garage>0 AND attic>0.
+
+					# Actually, let user choose. One method is that if term is encountered
+					# here, it must mean a beginning.
+					# Another is, if term is encountered, it is surely last option in the
+					# row (i.e. it is identical to +term)
+
+					# Make sure we rewind through insignificant elements, while still taking
+					# them into account (like inversion character '!'). This helps us to
+					# simplify 
+					next_token, i, negation2= on_to_next( tokens, i, negation)
+					negation= negation2
+
+					# Important: do not use 'i' below; use only 'i+1' or more.
+					# ('i' may be positioned at an inversion character rather than the field
+					# name you were expecting to see. For field name, just use 'token'.)
+
+					case config.parse_method
+					when :force_prefix_operator
+						# Same as YES word
+						field= token
+						value= "0" # XXX SET DEFAULT VAL
+						op= "+"# XXX SET DEFAULT VAL
+					when :force_infix_operator
+						field= token
+						op= tokens[i+=1]
+						value= tokens[i+=1]
+					when :force_suffix_value
+						field= token
+						if next_token== :operator
+							op= tokens[i+=1]
+							value= tokens[i+=1]
+						else
+							op= "="
+							value= tokens[i+=1]
+						end
+					when :prefer_infix_operator
+						if next_token== :operator
+							field= token
+							op= tokens[i+=1]
+							value= tokens[i+=1]
+						else
+							field= token
+							op= "+"
+							value= "0"
+						end
+					when :prefer_suffix_value
+						if next_token== :operator
+							field= token
+							op= tokens[i+=1]
+							value= tokens[i+=1]
+						elsif next_token== :probably_value
+							field= token
+							op= "="
+							value= tokens[i+=1]
+						else
+							field= token
+							op= "+"
+							value= "0"
+						end
+					end
 				end
 
 				text, vals, negative= qualify field, op, value, negative
