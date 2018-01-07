@@ -1,8 +1,8 @@
 # Welcome to Text To SQL Search
 
-**Text to SQL Search** is a shard written in [Crystal](http://www.crystal-lang.org) for translating textual searches into SQL WHERE clauses. All the necessary options to configure the specifics of the translation process are provided.
+**Text to SQL Search** is a shard written in [Crystal](http://www.crystal-lang.org) for translating textual searches into SQL WHERE clauses. All the necessary options to configure the specifics of the translation process exist.
 
-The search specifications are generally intended to come from three sources: free-form search inputs on websites, submitted form fields, and command lines, although there is nothing in the code that would prevent any other uses as long as the input is text.
+The search specifications are generally intended to come from three sources: free-form search inputs on websites, submitted form fields, and command lines. However, there is nothing in the code that would prevent any other uses as long as the input is text.
 
 This shard is for you if you use an SQL data store in your application and want to generate WHERE clauses in a simpler and more user friendly way than asking users to write SQL or you manually converting form inputs into SQL or ORM wrappers syntax.
 
