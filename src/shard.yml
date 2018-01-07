@@ -1,9 +1,0 @@
-name: text_to_sql_search
-version: 0.1.0
-
-authors:
-  -  <>
-
-crystal: 0.24.1
-
-license: MIT
