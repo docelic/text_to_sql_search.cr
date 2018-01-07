@@ -14,7 +14,7 @@ When search identifiers are recognized to be column names, generated SQL WHEREs 
 
 Let's start with a couple examples to get you going. The examples do not show specific configuration settings or char-by-char accurate SQL that is generated; they provide a general intro to what is supported and what you get out of the box.
 
-Say that we want to provide a text search for use in automobile sales:
+Let's say we want to provide a text search for use in automobile sales:
 
 ```text_to_sql_search
 INPUT: sedan    4 doors    > 2000 ccm    price < 20k    with    no    downpayment
