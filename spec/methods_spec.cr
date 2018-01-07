@@ -9,7 +9,7 @@ describe TextToSqlSearch do
 
 		t.peek_next(tokens, 0).should eq :todo
 		t.peek_next(tokens, 1).should eq :operator
-		t.peek_next(tokens, 6).should eq :negation
-		t.peek_next(tokens, 6, ["!"]).should eq :todo
+		t.peek_next(tokens, 6).should eq :inversion
+		t.peek_next(tokens, 6, /^\!$/).should eq :todo
   end
 end

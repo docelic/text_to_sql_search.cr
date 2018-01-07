@@ -5,6 +5,6 @@ describe TextToSqlSearch do
 		t= TextToSqlSearch::Base.new
 		c = t.config
 		c.class.should eq TextToSqlSearch::Config
-		c.operators_allowed.should eq ["<", ">", "=", ":"]
+		c.infix_operator.class.should eq Regex
   end
 end
