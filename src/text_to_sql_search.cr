@@ -268,7 +268,6 @@ module TextToSqlSearch
 				end
 				return {:todo, i, negation}
 			end
-			#raise Exception.new "BUG? list:#{list}, i:#{i}, negation:#{negation}, ignored:#{ignored}"
 			return {:none, i, negation}
 		end
 
